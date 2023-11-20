@@ -6,9 +6,7 @@ import { createImageMessage, createLocationMessage, createTextMessage } from './
 class Messenger extends Component {
   state = {
     messages: [
-      createImageMessage(
-        'https://wallpapers.com/images/high/meme-faces-funny-pictures-suucz4botm3ebwmh.webp'
-      ),
+      createImageMessage('https://wallpapers.com/images/high/meme-faces-funny-pictures-suucz4botm3ebwmh.webp'),
       createTextMessage('Gene Roque'),
       createTextMessage('CPE41S4'),
       createLocationMessage({
