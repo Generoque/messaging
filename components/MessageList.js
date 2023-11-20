@@ -103,7 +103,7 @@ const styles = StyleSheet.create ({
         borderRadius: 20,
     },
     text: {
-        color:'Black',
+        color:'#000',
         fontSize:16,
     },
     image: {
