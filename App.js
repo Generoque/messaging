@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Alert} from 'react-native';
 import MessageList from './components/MessageList';
 import { createImageMessage, createLocationMessage, createTextMessage} from './utils/MessageUtils';
 import React, {Component} from 'react';
