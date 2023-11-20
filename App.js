@@ -1,12 +1,14 @@
-import { StyleSheet, Text, View, Alert, TouchableOpacity, BackHandler, Image, Modal } from 'react-native';
-import MessageList from './components/MessageList';
-import { createImageMessage, createLocationMessage, createTextMessage} from './utils/MessageUtils';
 import React, { Component } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert } from 'react-native';
+import MessageList from './components/MessageList';
+import { createImageMessage, createLocationMessage, createTextMessage } from './utils/MessageUtils';
 
 class Messenger extends Component {
   state = {
     messages: [
-      createImageMessage('https://wallpapers.com/images/high/meme-faces-funny-pictures-suucz4botm3ebwmh.webp'),
+      createImageMessage(
+        'https://wallpapers.com/images/high/meme-faces-funny-pictures-suucz4botm3ebwmh.webp'
+      ),
       createTextMessage('Gene Roque'),
       createTextMessage('CPE41S4'),
       createLocationMessage({
@@ -19,15 +21,39 @@ class Messenger extends Component {
   };
 
   handlePressMessage = (message) => {
+    this.longPressTimer = setTimeout(() => {
+      this.showDeleteDialog(message);
+    }, 3000); // Set the duration (3 seconds) for a long press
+
     if (message.type === 'image') {
       this.setState({ selectedImage: message.uri, fullScreen: true });
-      return true;
     }
-    return false;
+  };
+
+  handleReleaseMessage = () => {
+    clearTimeout(this.longPressTimer);
+  };
+
+  showDeleteDialog = (message) => {
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          onPress: () => this.deleteMessage(message),
+          style: 'destructive',
+        },
+      ],
+    );
   };
 
   deleteMessage = (message) => {
-    this.setState((prevState ) => ({
+    this.setState((prevState) => ({
       messages: prevState.messages.filter((msg) => msg !== message),
     }));
   };
@@ -57,10 +83,10 @@ class Messenger extends Component {
           <TouchableOpacity
             key={index}
             onPress={() => {
-              const handled = this.handlePressMessage(message);
-              if (!handled) {
-                this.handlePressMessage(message);
-              }
+              this.handlePressMessage(message);
+            }}
+            onPressOut={() => {
+              this.handleReleaseMessage();
             }}
           >
             <View style={styles.messageContainer}>
@@ -105,7 +131,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  messageContainer:{
+  messageContainer: {
     borderWidth: 1,
     borderColor: '#ccc',
     padding: 10,
