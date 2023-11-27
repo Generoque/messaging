@@ -1,143 +1,236 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert, ImageBackground } from 'react-native';
+import Status from './components/Status';
 import MessageList from './components/MessageList';
 import Toolbar from './components/Toolbar';
 import { createImageMessage, createLocationMessage, createTextMessage } from './utils/MessageUtils';
 
-class Messenger extends Component {
+export default class App extends React.Component {
   state = {
-    messages: [
-      createImageMessage('https://wallpapers.com/images/high/meme-faces-funny-pictures-suucz4botm3ebwmh.webp'),
-      createTextMessage('Gene Roque'),
-      createTextMessage('CPE41S4'),
-      createLocationMessage({
-        latitude: 37.123123123,
-        longitude: -122.4324,
-      }),
-    ],
-    selectedImage: null,
-    fullScreen: false,
+    messages: [],
+    fullscreenImageId: null,
+    isInputFocused: false,
   };
 
-  handlePressMessage = (message) => {
-    this.longPressTimer = setTimeout(() => {
-      this.showDeleteDialog(message);
-    }, 3000); // Set the duration (3 seconds) for a long press
+  handlePressToolbarCamera = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Camera permission is not granted");
+      return;
+    }
 
-    if (message.type === 'image') {
-      this.setState({ selectedImage: message.uri, fullScreen: true });
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log("Camera result:", result);
+
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
+      console.log("Captured image URI:", result.assets[0].uri);
+      this.setState({
+        messages: [
+          createImageMessage(result.assets[0].uri),
+          ...this.state.messages,
+        ],
+      });
     }
   };
 
-  handleReleaseMessage = () => {
-    clearTimeout(this.longPressTimer);
+  handlePressToolbarLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access location was denied");
+      return;
+    }
+
+    let location = await Location.getCurrentPositionAsync({});
+    this.setState({
+      messages: [
+        createLocationMessage({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        }),
+        ...this.state.messages,
+      ],
+    });
   };
 
-  showDeleteDialog = (message) => {
-    Alert.alert(
-      'Delete Message',
-      'Are you sure you want to delete this message?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete',
-          onPress: () => this.deleteMessage(message),
-          style: 'destructive',
-        },
-      ],
+  dismissFullscreenImage = () => {
+    this.setState({ fullscreenImageId: null });
+  };
+
+  renderFullscreenImage = () => {
+    const { messages, fullscreenImageId } = this.state;
+    if (!fullscreenImageId) return null;
+
+    const image = messages.find((message) => message.id === fullscreenImageId);
+    if (!image) return null;
+
+    const { uri } = image;
+    return (
+      <TouchableHighlight
+        style={styles.fullscreenOverlay}
+        onPress={this.dismissFullscreenImage}
+        underlayColor="transparent"
+      >
+        <Image
+          style={styles.fullscreenImage}
+          source={{ uri }}
+          resizeMode="contain"
+        />
+      </TouchableHighlight>
     );
   };
 
-  deleteMessage = (message) => {
-    this.setState((prevState) => ({
-      messages: prevState.messages.filter((msg) => msg !== message),
+  handlePressMessage = ({ id, type }) => {
+    switch (type) {
+      case "text":
+        Alert.alert(
+          "Delete message?",
+          "Are you sure you want to permanently delete this message?",
+          [
+            {
+              text: "Cancel",
+              style: "cancel",
+            },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: () => this.handleDeleteMessage(item.id),
+            },
+          ]
+        );
+        break;
+
+      case "image":
+        this.setState({ fullscreenImageId: id });
+        break;
+
+      default:
+        break;
+    }
+  };
+
+  handleDeleteMessage = (id) => {
+    this.setState((state) => ({
+      messages: state.messages.filter((message) => message.id !== id),
     }));
   };
 
   componentDidMount() {
-    BackHandler.addEventListener('hardwareBackPress', this.handleBackPress);
+    this.subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        const { fullscreenImageId } = this.state;
+        if (fullscreenImageId) {
+          this.dismissFullscreenImage();
+          return true;
+        }
+        return false;
+      }
+    );
   }
 
   componentWillUnmount() {
-    BackHandler.removeEventListener('hardwareBackPress', this.handleBackPress);
+    this.subscription.remove();
   }
 
-  handleBackPress = () => {
-    if (this.state.fullScreen) {
-      this.setState({ fullScreen: false });
-      return true;
-    }
-    return false;
+  handleChangeFocus = (isFocused) => {
+    this.setState({ isInputFocused: isFocused });
   };
 
-  renderMessageList() {
+  handleSubmit = (text) => {
     const { messages } = this.state;
+    this.setState({
+      messages: [createTextMessage(text), ...messages],
+    });
+  };
+
+  renderToolbar() {
+    const { isInputFocused } = this.state;
 
     return (
-      <View style={styles.content}>
-        {messages.map((message, index) => (
-          <TouchableOpacity
-            key={index}
-            onPress={() => {
-              this.handlePressMessage(message);
-            }}
-            onPressOut={() => {
-              this.handleReleaseMessage();
-            }}
-          >
-            <View style={styles.messageContainer}>
-              <MessageList messages={[message]} />
-            </View>
-          </TouchableOpacity>
-        ))}
-        {this.state.fullScreen && (
-          <Modal
-            visible={this.state.fullScreen}
-            onRequestClose={() => this.setState({ fullScreen: false })}
-          >
-            <TouchableOpacity
-              style={{ flex: 1 }}
-              onPress={() => this.setState({ fullScreen: false })}
-            >
-              <Image
-                source={{ uri: this.state.selectedImage }}
-                resizeMode="contain"
-                style={{ flex: 1 }}
-              />
-            </TouchableOpacity>
-          </Modal>
-        )}
+      <View style={styles.toolbar}>
+        <Toolbar
+          isFocused={isInputFocused}
+          onSubmit={this.handleSubmit}
+          onChangeFocus={this.handleChangeFocus}
+          onPressCamera={this.handlePressToolbarCamera}
+          onPressLocation={this.handlePressToolbarLocation}
+        />
       </View>
     );
   }
 
   render() {
-    return this.renderMessageList();
+    return (
+      /**<ImageBackground
+        source={{
+          uri: "https://i.pinimg.com/564x/64/05/0e/64050e7d01804cc8c5fae7fdc8f346fe.jpg",
+        }}
+        style={styles.container}
+      >**/
+        <View style={styles.innerContainer}>
+          <Status />
+          {this.renderFullscreenImage()}
+          <MessageList
+            messages={this.state.messages}
+            onPressMessage={this.handlePressMessage}
+          />
+          {this.renderToolbar()}
+        </View>
+      //</ImageBackground>
+    );
   }
 }
-
-export default Messenger;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  innerContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   content: {
     flex: 1,
-    width: '100%',
+    backgroundColor: "white",
   },
-  messageContainer: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 10,
+  inputMethodEditor: {
+    flex: 1,
+    backgroundColor: "white",
+  },
+  toolbar: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.04)",
+    backgroundColor: "white",
+    width: "100%",
+    height: 50,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 10,
+  },
+  fullscreenOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "black",
+    zIndex: 1000, // Ensure it covers other components
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullscreenImage: {
+    flex: 1,
+    resizeMode: "contain",
+    width: "100%",
+    height: "100%",
   },
 });
-
-
