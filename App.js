@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert } from 'react-native';
 import MessageList from './components/MessageList';
+import Toolbar from './components/Toolbar';
 import { createImageMessage, createLocationMessage, createTextMessage } from './utils/MessageUtils';
 
 class Messenger extends Component {
@@ -118,6 +119,8 @@ class Messenger extends Component {
   }
 }
 
+export default Messenger;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -137,4 +140,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Messenger;
+
