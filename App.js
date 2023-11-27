@@ -1,13 +1,16 @@
 import React, { Component } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, BackHandler, Image, Modal, Alert, ImageBackground} from 'react-native';
 import Status from './components/Status';
 import MessageList from './components/MessageList';
 import Toolbar from './components/Toolbar';
 import { createImageMessage, createLocationMessage, createTextMessage } from './utils/MessageUtils';
-
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 export default class App extends React.Component {
   state = {
     messages: [],
+    selectedImage: null,
+    fullScreen: false,
     fullscreenImageId: null,
     isInputFocused: false,
   };
@@ -28,7 +31,7 @@ export default class App extends React.Component {
 
     console.log("Camera result:", result);
 
-    if (!result.cancelled && result.assets && result.assets.length > 0) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       console.log("Captured image URI:", result.assets[0].uri);
       this.setState({
         messages: [
@@ -167,12 +170,12 @@ export default class App extends React.Component {
 
   render() {
     return (
-      /**<ImageBackground
+      <ImageBackground
         source={{
-          uri: "https://i.pinimg.com/564x/64/05/0e/64050e7d01804cc8c5fae7fdc8f346fe.jpg",
+          uri: "https://i.pinimg.com/564x/93/e9/da/93e9da4b8e98a473addc089aa58d7ecd.jpg  ",
         }}
         style={styles.container}
-      >**/
+      >
         <View style={styles.innerContainer}>
           <Status />
           {this.renderFullscreenImage()}
@@ -182,7 +185,7 @@ export default class App extends React.Component {
           />
           {this.renderToolbar()}
         </View>
-      //</ImageBackground>
+        </ImageBackground>
     );
   }
 }
