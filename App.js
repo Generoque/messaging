@@ -170,12 +170,12 @@ export default class App extends React.Component {
 
   render() {
     return (
-      <ImageBackground
-        source={{
-          uri: "https://i.pinimg.com/564x/93/e9/da/93e9da4b8e98a473addc089aa58d7ecd.jpg  ",
-        }}
-        style={styles.container}
-      >
+     //<ImageBackground
+       // source={{
+        //  uri: "https://th.bing.com/th/id/OIP.nShsJdyNCdbai3s4Slk0kgHaH9?rs=1&pid=ImgDetMain&fbclid=IwAR2sUByHGHtYtdCnJ5d38L2GRlSBjy5PnWkb5z66eZyyQYxWrK4pWO29H3c  ",
+        //}}
+      ///  style={styles.container}
+     // >
         <View style={styles.innerContainer}>
           <Status />
           {this.renderFullscreenImage()}
@@ -185,7 +185,7 @@ export default class App extends React.Component {
           />
           {this.renderToolbar()}
         </View>
-        </ImageBackground>
+       // </ImageBackground>
     );
   }
 }
